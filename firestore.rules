@@ -1,0 +1,102 @@
+rules_version = '2';
+
+// Phân quyền BRANDO Sales Assistant.
+// - Chỉ email @brando.vn đã xác minh (đổi tên miền: sửa ALLOWED_DOMAIN_RE bên dưới và NEXT_PUBLIC_ALLOWED_DOMAIN).
+// - users/{uid}.role: sales | lead | admin — chỉ server (Admin SDK) được ghi.
+// - Khách hàng: owner, collaborators, lead cùng teamId, admin.
+// - Các dữ liệu quan trọng (khách hàng mới, nhận định, báo giá, bình luận, catalog) chỉ server ghi;
+//   client chỉ được sửa sections/business (theo field), presence, khoá field, activity, ghi chú gặp.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function inDomain() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('^[^@]+@brando[.]vn$');
+    }
+    function meDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function active() {
+      return inDomain()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && meDoc().data.active == true;
+    }
+    function role() { return meDoc().data.role; }
+
+    function canAccess(c) {
+      return active() && (
+        role() == 'admin'
+        || c.ownerId == request.auth.uid
+        || request.auth.uid in c.collaboratorIds
+        || (role() == 'lead' && c.teamId == meDoc().data.teamId)
+      );
+    }
+    function clientData(cid) {
+      return get(/databases/$(database)/documents/clients/$(cid)).data;
+    }
+
+    match /users/{uid} {
+      // Đọc hồ sơ chính mình được phép cả trước khi server tạo xong (lần đăng nhập đầu).
+      allow read: if active() || (inDomain() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
+    match /catalog/{doc} {
+      allow read: if active();
+      allow write: if false;
+    }
+
+    match /clients/{cid} {
+      allow read: if canAccess(resource.data);
+      allow create, delete: if false;
+      // Cập nhật theo field: chỉ được đụng tới sections / business / dấu thời gian / người sửa cuối.
+      allow update: if canAccess(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['sections', 'business', 'updatedAt', 'lastEditedBy', 'status'])
+        && (!('status' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.status in ['research', 'assessed', 'meeting', 'quoted', 'won', 'lost']);
+
+      match /presence/{uid} {
+        allow read: if canAccess(clientData(cid));
+        allow write: if canAccess(clientData(cid)) && uid == request.auth.uid;
+      }
+
+      // Khoá mềm: ai cũng có thể chiếm khoá (UI hỏi xác nhận), nhưng chỉ ghi khoá dưới tên chính mình.
+      match /locks/{field} {
+        allow read: if canAccess(clientData(cid));
+        allow create, update: if canAccess(clientData(cid)) && request.resource.data.uid == request.auth.uid;
+        allow delete: if canAccess(clientData(cid));
+      }
+
+      match /activity/{id} {
+        allow read: if canAccess(clientData(cid));
+        allow create: if canAccess(clientData(cid)) && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /meetings/{id} {
+        allow read: if canAccess(clientData(cid));
+        allow create: if canAccess(clientData(cid)) && request.resource.data.authorId == request.auth.uid;
+        allow update: if canAccess(clientData(cid)) && request.resource.data.authorId == resource.data.authorId;
+        allow delete: if false;
+      }
+
+      match /comments/{id} {
+        allow read: if canAccess(clientData(cid));
+        allow write: if false;
+      }
+      match /assessment/{id} {
+        allow read: if canAccess(clientData(cid));
+        allow write: if false;
+      }
+      match /quotes/{id} {
+        allow read: if canAccess(clientData(cid));
+        allow write: if false;
+      }
+    }
+
+    match /mail/{id} { allow read, write: if false; }
+    match /_mock/{path=**} { allow read, write: if false; }
+  }
+}
