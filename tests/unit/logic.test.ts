@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { isAllowedEmail } from "@/lib/config";
 import { budgetAdvice, buildPackages, servicesForProblem } from "@/lib/packages";
-import { buildLines, computeTotals, needsApproval, PricingError } from "@/lib/pricing";
+import { buildLines, computeTotals, flexibleLines, needsApproval, PricingError } from "@/lib/pricing";
 import { toPresentation } from "@/lib/present";
-import { parsePrices, parseRules, parseStats, parseVndNumber } from "@/lib/sheets-parse";
+import { parseCases, parsePrices, parseRules, parseStandardPackages, parseStats, parseVndNumber } from "@/lib/sheets-parse";
 import { enforceStatsLibrary, findDisallowedNumbers, allowedNumberSet, sanitizeText, scoreFromScorecard } from "@/lib/stats-guard";
 import type { Assessment, AssessmentDoc, Client, PriceItem } from "@/lib/types";
-import { priceRows, ruleRows, statRows } from "@/server/fixtures/sheets";
+import { caseRows, packageRows, priceRows, ruleRows, statRows } from "@/server/fixtures/sheets";
 
 const prices = parsePrices(priceRows).items;
 const priceMap = new Map<string, PriceItem>(prices.map((p) => [p.code, p]));
@@ -163,5 +163,75 @@ describe("chế độ trình bày", () => {
       expect(json).not.toContain(secret);
     }
     expect(json).toContain("Ít đánh giá");
+  });
+});
+
+describe("Bộ chuẩn: gói chuẩn và case", () => {
+  it("đọc case theo tên cột tiếng Việt", () => {
+    const cases = parseCases(caseRows);
+    expect(cases).toHaveLength(1);
+    expect(cases[0]).toMatchObject({ code: "M1", group: "Nhận biết" });
+  });
+
+  it("gom chi tiết theo mã gói, tính tổng từ bảng giá, lấy cờ tự gửi từ bảng tóm tắt", () => {
+    const { items, errors } = parseStandardPackages(packageRows, prices);
+    expect(errors).toEqual([]);
+    expect(items.map((p) => p.code)).toEqual(["M1-T", "M1-C"]);
+    const [t, c] = items;
+    expect(t).toMatchObject({ caseCode: "M1", tier: "Tiết kiệm", fixedTotal: 7_500_000, flexibleCount: 0, autoSend: true });
+    expect(c.autoSend).toBe(false);
+    expect(c.items.find((i) => i.code === "FB-CONTENT")?.note).toBe("1 tháng");
+  });
+
+  it("đơn giá 0 = giá linh hoạt, mã lạ bị báo lỗi", () => {
+    const withFlex = [...prices, { ...prices[0], code: "KOC-VN", price: 0 }];
+    const rows = [
+      ["Mã gói", "Case", "Mức", "Mã DV", "Số lượng"],
+      ["X-T", "X", "Tiết kiệm", "GBP-OPT", 2],
+      ["X-T", "X", "Tiết kiệm", "KOC-VN", 1],
+      ["X-T", "X", "Tiết kiệm", "KHONG-CO", 1],
+    ];
+    const { items, errors } = parseStandardPackages(rows, withFlex);
+    expect(items[0].fixedTotal).toBe(7_000_000);
+    expect(items[0].flexibleCount).toBe(2);
+    expect(errors).toHaveLength(1);
+  });
+
+  it("báo giá có dòng giá linh hoạt phải chờ duyệt", () => {
+    const flexMap = new Map(priceMap);
+    flexMap.set("KOC-VN", { ...prices[0], code: "KOC-VN", price: 0 });
+    const lines = buildLines([{ code: "GBP-OPT", quantity: 1 }, { code: "KOC-VN", quantity: 1 }], flexMap);
+    expect(flexibleLines(lines).map((l) => l.code)).toEqual(["KOC-VN"]);
+  });
+});
+
+describe("Bộ chuẩn: bố cục tab Gói thật", () => {
+  it("bỏ qua bảng mức ngân sách ở trên, đọc số dạng 1.425.000 và cột Ghi chú", () => {
+    const real = parsePrices([
+      ["code", "name", "group", "description", "unit", "price", "effective_from"],
+      ["MAP-CARE-BASIC", "Chăm Map Gói Brando Basic", "Google Maps", "", "Gói 1 tháng", "2400000", "2026-11-24"],
+      ["ENTITY-100", "Gói 100 Social Profile", "Social Entity", "", "Gói", "1200000", "2026-11-24"],
+      ["FB-CARE", "Chăm sóc Fanpage & Instagram", "Facebook / Instagram", "", "Tháng", "0", "2026-11-24"],
+      ["TRIP-REVIEW", "Review Tripadvisor", "Tripadvisor", "", "Review", "95000", "2026-11-24"],
+    ]).items;
+    const rows = [
+      ["Mức ngân sách", "Trần ngân sách (VNĐ)", "Nguồn"],
+      ["Tiết kiệm", "7.000.000"],
+      ["Ngưỡng tự gửi báo giá (VNĐ)", "30.000.000"],
+      ["Mã gói", "Case", "Mức", "Tổng phần giá cố định (VNĐ)", "Số hạng mục giá linh hoạt", "Trần mức (VNĐ)", "So với trần", "Gửi báo giá"],
+      ["A4-T", "A4", "Tiết kiệm", "3.600.000", "1", "7.000.000", "Trong trần", "Chờ anh duyệt"],
+      ["A9-T", "A9", "Tiết kiệm", "1.425.000", "0", "7.000.000", "Trong trần", "Tự gửi được"],
+      [],
+      ["Mã gói", "Case", "Mức", "Mã DV", "Dịch vụ", "Số lượng", "Đơn giá (VNĐ)", "Thành tiền (VNĐ)", "Ghi chú"],
+      ["A4-T", "A4", "Tiết kiệm", "MAP-CARE-BASIC", "", "1", "2.400.000", "2.400.000"],
+      ["A4-T", "A4", "Tiết kiệm", "ENTITY-100", "", "1", "1.200.000", "1.200.000"],
+      ["A4-T", "A4", "Tiết kiệm", "FB-CARE", "", "1"],
+      ["A9-T", "A9", "Tiết kiệm", "TRIP-REVIEW", "", "15", "95.000", "1.425.000", "Chia 2 tháng"],
+    ];
+    const { items, errors } = parseStandardPackages(rows, real);
+    expect(errors).toEqual([]);
+    expect(items[0]).toMatchObject({ code: "A4-T", tier: "Tiết kiệm", fixedTotal: 3_600_000, flexibleCount: 1, autoSend: false });
+    expect(items[1]).toMatchObject({ fixedTotal: 1_425_000, autoSend: true });
+    expect(items[1].items[0]).toEqual({ code: "TRIP-REVIEW", quantity: 15, note: "Chia 2 tháng" });
   });
 });

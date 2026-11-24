@@ -114,6 +114,29 @@ export interface PriceItem {
   effective_from: string;
 }
 
+/** Một "case" khách hàng trong Bộ chuẩn (tab Case): A1…A6. */
+export interface CaseDef {
+  code: string;
+  name: string; // ngành tham chiếu
+  signals: string; // điều kiện nhận diện (theo tab Tiêu chí)
+  group: string; // nhóm dịch vụ: Nhận biết / Chuyển đổi…
+  goal: string; // mục tiêu tư vấn
+}
+
+/** Gói chuẩn theo case × mức (tab Gói của Bộ chuẩn), vd. A1-T = case A1, mức Tiết kiệm. */
+export interface StandardPackage {
+  code: string;
+  caseCode: string;
+  tier: string; // Tiết kiệm / Cơ bản / Premium / VIP / VIPP
+  items: { code: string; quantity: number; note?: string }[];
+  /** Tổng phần giá cố định (chưa VAT), tính từ bảng giá đã đồng bộ. */
+  fixedTotal: number;
+  /** Số hạng mục giá linh hoạt (đơn giá 0 trong bảng giá = báo giá riêng). */
+  flexibleCount: number;
+  /** Cột "Gửi báo giá" của sheet: true = "Tự gửi được", false = "Chờ anh duyệt". */
+  autoSend: boolean;
+}
+
 export interface RuleRow {
   industry: string; // "*" = mọi ngành
   problem_code: string;

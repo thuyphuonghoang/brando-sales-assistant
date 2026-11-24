@@ -8,7 +8,7 @@ import {
   type Query,
 } from "firebase/firestore";
 import { firebase } from "@/lib/firebase/client";
-import type { AppUser, Industry, PriceItem, RuleRow, StatItem } from "@/lib/types";
+import type { AppUser, CaseDef, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
 import { useAuth } from "@/components/auth-provider";
 
 /** Lắng nghe realtime một document. `path` null → không lắng nghe. */
@@ -49,12 +49,15 @@ export function useCatalog() {
   const rules = useDoc<{ items: RuleRow[] }>("catalog/rules");
   const industries = useDoc<{ items: Industry[] }>("catalog/industries");
   const stats = useDoc<{ items: StatItem[] }>("catalog/stats");
+  const packages = useDoc<{ items: StandardPackage[]; cases: CaseDef[] }>("catalog/packages");
   const meta = useDoc<{ syncedAt: number; errors: string[] }>("catalog/meta");
   return {
     prices: prices.data?.items ?? [],
     rules: rules.data?.items ?? [],
     industries: industries.data?.items ?? [],
     stats: stats.data?.items ?? [],
+    packages: packages.data?.items ?? [],
+    cases: packages.data?.cases ?? [],
     syncedAt: meta.data?.syncedAt ?? null,
     loading: prices.loading || industries.loading,
   };

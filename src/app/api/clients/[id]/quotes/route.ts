@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { appConfig } from "@/lib/config";
-import { buildLines, computeTotals, needsApproval } from "@/lib/pricing";
+import { buildLines, computeTotals, flexibleLines, needsApproval } from "@/lib/pricing";
 import { allowedNumberSet, sanitizeText } from "@/lib/stats-guard";
 import type { AppUser, Quote } from "@/lib/types";
 import { loadClientFor, requireUser } from "@/server/auth";
@@ -37,7 +37,9 @@ export const POST = handle(async (req: Request, ctx: RouteContext<"/api/clients/
 
   const lines = buildLines(body.items, new Map(catalog.prices.map((p) => [p.code, p])));
   const totals = computeTotals(lines, body.discountPercent, appConfig.vatPercent);
-  const pending = needsApproval(body.discountPercent, appConfig.discountApprovalThreshold);
+  const overDiscount = needsApproval(body.discountPercent, appConfig.discountApprovalThreshold);
+  const flexible = flexibleLines(lines);
+  const pending = overDiscount || flexible.length > 0;
 
   const statsById = new Map(catalog.stats.map((s) => [s.id, s]));
   const allowed = allowedNumberSet(catalog.stats);
@@ -101,9 +103,14 @@ export const POST = handle(async (req: Request, ctx: RouteContext<"/api/clients/
     const leads = await db.collection("users").where("teamId", "==", client.teamId).where("role", "==", "lead").get();
     await sendMail(
       leads.docs.map((d) => (d.data() as AppUser).email),
-      `[BRANDO] Báo giá v${quote.version} cho ${client.name} chờ duyệt chiết khấu ${body.discountPercent}%`,
+      `[BRANDO] Báo giá v${quote.version} cho ${client.name} chờ duyệt`,
       [
-        `${user.displayName} đề xuất chiết khấu ${body.discountPercent}% (vượt ngưỡng ${appConfig.discountApprovalThreshold}%).`,
+        ...(overDiscount
+          ? [`${user.displayName} đề xuất chiết khấu ${body.discountPercent}% (vượt ngưỡng ${appConfig.discountApprovalThreshold}%).`]
+          : []),
+        ...(flexible.length
+          ? [`Có ${flexible.length} hạng mục giá linh hoạt cần chốt giá: ${flexible.map((l) => l.name).join(", ")}.`]
+          : []),
         `Khách hàng: ${client.name}.`,
       ],
       `/clients/${id}?tab=quotes`,
