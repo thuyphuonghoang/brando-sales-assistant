@@ -22,8 +22,8 @@ export default function AdminPage() {
   const sync = async () => {
     setBusy(true);
     try {
-      const r = await api<{ prices: number; rules: number; industries: number; stats: number; packages: number; errors: string[] }>("/api/admin/sync", "POST");
-      toast.success(`Đã đồng bộ: ${r.prices} dịch vụ, ${r.packages} gói chuẩn, ${r.rules} quy tắc, ${r.industries} ngành, ${r.stats} số liệu`);
+      const r = await api<{ prices: number; rules: number; industries: number; stats: number; packages: number; criteria: number; errors: string[] }>("/api/admin/sync", "POST");
+      toast.success(`Đã đồng bộ: ${r.prices} dịch vụ, ${r.packages} gói chuẩn, ${r.criteria} tiêu chí, ${r.rules} quy tắc, ${r.industries} ngành, ${r.stats} số liệu`);
       r.errors.forEach((e) => toast.warning(e));
     } catch (e) {
       toast.error((e as Error).message);

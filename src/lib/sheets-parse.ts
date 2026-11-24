@@ -1,6 +1,6 @@
 // Chuyển dữ liệu thô từ Google Sheets (mảng các hàng) thành object catalog.
 // Hàng đầu tiên là tiêu đề cột; tên cột không phân biệt hoa thường/khoảng trắng.
-import type { CaseDef, ChecklistItem, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "./types";
+import type { CaseDef, ChecklistItem, Criterion, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "./types";
 
 type Row = (string | number | null | undefined)[];
 
@@ -197,4 +197,22 @@ export function parseStandardPackages(
     else pkg.fixedTotal += price.price * quantity;
   });
   return { items: [...byCode.values()], errors };
+}
+
+/** Tab "Tiêu chí": Mã | Kênh | Chỉ số | Cách lấy dữ liệu tự động | Yếu | Trung bình | Mạnh | Ghi chú. */
+export function parseCriteria(rows: Row[]): Criterion[] {
+  const t = findTable(rows, ["ma", "chi-so"]);
+  if (!t) return [];
+  return bodyRows(rows, t.at, false)
+    .map((r) => ({
+      code: cell(r, t.col("ma")),
+      channel: cell(r, t.col("kenh")),
+      label: cell(r, t.col("chi-so")),
+      how: cell(r, t.col("cach-lay-du-lieu")),
+      weak: cell(r, t.col("yeu")),
+      mid: cell(r, t.col("trung-binh")),
+      strong: cell(r, t.col("manh")),
+      note: cell(r, t.col("ghi-chu")),
+    }))
+    .filter((c) => c.code);
 }

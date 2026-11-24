@@ -169,7 +169,7 @@ describe("chế độ trình bày", () => {
 describe("Bộ chuẩn: gói chuẩn và case", () => {
   it("đọc case theo tên cột tiếng Việt", () => {
     const cases = parseCases(caseRows);
-    expect(cases).toHaveLength(1);
+    expect(cases).toHaveLength(2);
     expect(cases[0]).toMatchObject({ code: "M1", group: "Nhận biết" });
   });
 

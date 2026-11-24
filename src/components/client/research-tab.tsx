@@ -7,6 +7,7 @@ import type { FieldLock } from "@/hooks/collab";
 import { CommentThread } from "@/components/collab-widgets";
 import { EditableField } from "@/components/editable-field";
 import { SourceBadge } from "@/components/source-badge";
+import { StandardScoreCard } from "./standard-score";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -213,6 +214,8 @@ export function ResearchTab({ client, locks }: { client: Client; locks: Record<s
           )}
         </CardContent>
       </Card>
+
+      <StandardScoreCard client={client} />
 
       <Card>
         <CardHeader>

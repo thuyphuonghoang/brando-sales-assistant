@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useStandardScore } from "./standard-score";
 
 export interface Selection {
   packageName: string;
@@ -25,6 +26,7 @@ export function ServicesTab({
   onUse: (s: Selection) => void;
 }) {
   const { prices, rules, packages: standard, cases } = useCatalog();
+  const { suggestion } = useStandardScore(client);
   const priceMap = useMemo(() => new Map(prices.map((p) => [p.code, p])), [prices]);
   const a = assessment ? (assessment.edited ?? assessment.ai) : null;
   const packages = useMemo(
@@ -42,6 +44,7 @@ export function ServicesTab({
     <StandardPackages
       packages={standard}
       cases={cases}
+      suggested={suggestion.pick}
       priceMap={priceMap}
       onPick={(p) => setCustom({ packageName: `${p.code} · ${p.tier}`, items: p.items.map((i) => ({ code: i.code, quantity: i.quantity })) })}
     />
@@ -202,16 +205,19 @@ export function ServicesTab({
 function StandardPackages({
   packages,
   cases,
+  suggested,
   priceMap,
   onPick,
 }: {
   packages: StandardPackage[];
   cases: CaseDef[];
+  suggested: string | null;
   priceMap: Map<string, PriceItem>;
   onPick: (p: StandardPackage) => void;
 }) {
   const caseCodes = useMemo(() => [...new Set(packages.map((p) => p.caseCode))], [packages]);
-  const [caseCode, setCaseCode] = useState("");
+  const [chosen, setCaseCode] = useState<string | null>(null);
+  const caseCode = chosen ?? suggested ?? "";
   if (packages.length === 0) return null;
   const current = cases.find((c) => c.code === caseCode);
   const list = packages.filter((p) => p.caseCode === caseCode);
@@ -236,6 +242,7 @@ function StandardPackages({
               <option key={c} value={c}>
                 {c}
                 {d ? ` · ${d.name}` : ""}
+                {c === suggested ? " (gợi ý)" : ""}
               </option>
             );
           })}

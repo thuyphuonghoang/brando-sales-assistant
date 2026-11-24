@@ -2,8 +2,8 @@ import "server-only";
 // Đọc 4 Google Sheets nguồn và đồng bộ vào Firestore (collection "catalog").
 import { google } from "googleapis";
 import { FieldValue } from "firebase-admin/firestore";
-import { parseCases, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
-import type { CaseDef, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
+import { parseCases, parseCriteria, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
+import type { CaseDef, Criterion, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
 import { adminDb } from "../firebase-admin";
 import * as fx from "../fixtures/sheets";
 import { googleAuth, googleMode, requireEnv } from "./index";
@@ -59,6 +59,7 @@ async function mockSource() {
     stats: parse<Rows>("statRows", fx.statRows),
     packages: parse<Rows>("packageRows", fx.packageRows),
     cases: parse<Rows>("caseRows", fx.caseRows),
+    criteria: parse<Rows>("criteriaRows", fx.criteriaRows),
   };
 }
 
@@ -68,6 +69,7 @@ export interface SyncResult {
   industries: number;
   stats: number;
   packages: number;
+  criteria: number;
   errors: string[];
 }
 
@@ -78,6 +80,7 @@ type Source = {
   stats: Rows;
   packages: Rows;
   cases: Rows;
+  criteria: Rows;
 };
 
 /** Tab có tên cố định trong Bộ chuẩn; thiếu tab thì trả [] để phần còn lại vẫn đồng bộ được. */
@@ -109,15 +112,16 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
     const priceId = requireEnv("PRICE_SHEET_ID");
     // Gói + Case nằm trong Bộ chuẩn; mặc định chính là sheet chứa bảng giá.
     const standardId = process.env.STANDARD_SHEET_ID || priceId;
-    const [prices, rules, industries, stats, packages, cases] = await Promise.all([
+    const [prices, rules, industries, stats, packages, cases, criteria] = await Promise.all([
       tabTitleByGid(priceId, process.env.PRICE_SHEET_GID).then((t) => readTab(priceId, t)),
       optional("RULES_SHEET_ID", [] as Rows, warnings, (id) => readTab(id)),
       optional("INDUSTRY_SHEET_ID", {} as Record<string, Rows>, warnings, (id) => readAllTabs(id)),
       optional("STATS_SHEET_ID", [] as Rows, warnings, (id) => readTab(id)),
       readNamedTab(standardId, "Gói", warnings),
       readNamedTab(standardId, "Case", warnings),
+      readNamedTab(standardId, "Tiêu chí", warnings),
     ]);
-    src = { prices, rules, industries, stats, packages, cases };
+    src = { prices, rules, industries, stats, packages, cases, criteria };
   }
 
   const { items: prices, errors: priceErrors } = parsePrices(src.prices);
@@ -126,6 +130,7 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
   const stats: StatItem[] = parseStats(src.stats);
   const { items: packages, errors: packageErrors } = parseStandardPackages(src.packages, prices);
   const cases: CaseDef[] = parseCases(src.cases);
+  const criteria: Criterion[] = parseCriteria(src.criteria);
   const errors = [...warnings, ...priceErrors, ...packageErrors];
 
   const db = adminDb();
@@ -135,7 +140,7 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
   batch.set(cat.doc("rules"), { items: rules });
   batch.set(cat.doc("industries"), { items: industries });
   batch.set(cat.doc("stats"), { items: stats });
-  batch.set(cat.doc("packages"), { items: packages satisfies StandardPackage[], cases });
+  batch.set(cat.doc("packages"), { items: packages satisfies StandardPackage[], cases, criteria });
   batch.set(cat.doc("meta"), { syncedAt: Date.now(), syncedBy: byUid, errors, serverTime: FieldValue.serverTimestamp() });
   await batch.commit();
 
@@ -145,6 +150,7 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
     industries: industries.length,
     stats: stats.length,
     packages: packages.length,
+    criteria: criteria.length,
     errors,
   };
 }
@@ -181,5 +187,6 @@ export async function loadCatalog() {
     stats: (s.data()?.items ?? []) as StatItem[],
     packages: (k.data()?.items ?? []) as StandardPackage[],
     cases: (k.data()?.cases ?? []) as CaseDef[],
+    criteria: (k.data()?.criteria ?? []) as Criterion[],
   };
 }
