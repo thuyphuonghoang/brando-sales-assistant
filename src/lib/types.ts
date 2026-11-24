@@ -69,6 +69,29 @@ export interface PlaceInfo {
   primaryType?: string;
 }
 
+/** Kết quả khám website của khách (nhãn "Thu thập"). */
+export interface WebsiteAudit {
+  url: string;
+  finalUrl?: string;
+  reachable: boolean;
+  https: boolean;
+  status?: number;
+  title?: string;
+  description?: string;
+  hasViewport: boolean;
+  hasPhone: boolean;
+  hasBooking: boolean;
+  hasMenu: boolean;
+  hasPrices: boolean;
+  hasSchema: boolean;
+  social: Partial<Record<"facebook" | "instagram" | "tiktok" | "tripadvisor" | "youtube" | "zalo", string>>;
+  wordCount: number;
+  /** Điểm hiệu năng mobile của Google PageSpeed (0–100); null khi không đo được. */
+  mobileScore: number | null;
+  checkedAt: number;
+  error?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -100,6 +123,9 @@ export interface Client {
   /** Dữ liệu thu thập từ Places API (nhãn "Thu thập"). */
   place?: PlaceInfo | null;
   competitors?: PlaceInfo[];
+  website?: WebsiteAudit | null;
+  /** Lý do không thu thập được Google Maps (vd. chưa có khoá Places). */
+  mapsError?: string | null;
   researchedAt?: number | null;
   createdAt: number;
   updatedAt: number;
