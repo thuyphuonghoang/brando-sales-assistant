@@ -75,7 +75,31 @@ export function nameViolates(name: string): boolean {
   return allCaps || separators >= 3;
 }
 
+/** Tiêu chí website (mã WEB-*): tự chấm từ kết quả khám website nếu tab Tiêu chí có các mã này. */
+function websiteValue(c: Criterion, client: Client): { level?: CriterionLevel; num?: number; value?: string; evidence: string } | null {
+  const w = client.website;
+  if (!w || !w.reachable) return null;
+  const yesNo = (ok: boolean, what: string) => ({ level: (ok ? "Mạnh" : "Yếu") as CriterionLevel, value: ok ? "Có" : "Chưa có", evidence: `Khám website: ${what}` });
+  switch (c.code) {
+    case "WEB-SSL":
+      return yesNo(w.https, "HTTPS");
+    case "WEB-MOBILE":
+      return w.mobileScore == null ? null : { num: w.mobileScore, value: `${w.mobileScore}/100`, evidence: "Google PageSpeed (mobile)" };
+    case "WEB-BOOK":
+      return yesNo(w.hasBooking, "nút đặt bàn / đặt lịch");
+    case "WEB-MENU":
+      return yesNo(w.hasMenu && w.hasPrices, "menu có giá dạng chữ");
+    case "WEB-PHONE":
+      return yesNo(w.hasPhone, "số điện thoại / nút gọi");
+    case "WEB-SCHEMA":
+      return yesNo(w.hasSchema, "khai báo doanh nghiệp (schema)");
+    default:
+      return null;
+  }
+}
+
 function autoValue(c: Criterion, client: Client): { level?: CriterionLevel; num?: number; value?: string; evidence: string } | null {
+  if (c.code.startsWith("WEB-")) return websiteValue(c, client);
   const p = client.place;
   if (!p) return null;
   switch (c.code) {
