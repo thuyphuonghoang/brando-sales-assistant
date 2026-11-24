@@ -3,7 +3,19 @@ import "server-only";
 // phát triển trên emulator và chạy test; GOOGLE_MODE=live gọi API thật.
 import { google } from "googleapis";
 
-export const googleMode = (): "mock" | "live" => (process.env.GOOGLE_MODE === "live" ? "live" : "mock");
+/**
+ * Dữ liệu mẫu chỉ được dùng khi phát triển/chạy test. Bản chạy thật (NODE_ENV=production) luôn gọi API
+ * thật kể cả khi GOOGLE_MODE=mock, để khách không bao giờ thấy dữ liệu ảo — trừ khi đặt ALLOW_MOCK_DATA=true
+ * (vd. một bản demo nội bộ).
+ */
+export const mockAllowed = (): boolean =>
+  process.env.NODE_ENV !== "production" || process.env.ALLOW_MOCK_DATA === "true";
+
+export const googleMode = (): "mock" | "live" =>
+  process.env.GOOGLE_MODE === "live" || !mockAllowed() ? "live" : "mock";
+
+/** Thiếu cấu hình để gọi dịch vụ thật → báo rõ cho người dùng thay vì "Lỗi máy chủ". */
+export class ConfigError extends Error {}
 
 let cachedAuth: InstanceType<typeof google.auth.GoogleAuth> | null = null;
 
@@ -34,6 +46,6 @@ export function googleAuth() {
 
 export function requireEnv(name: string): string {
   const v = process.env[name];
-  if (!v) throw new Error(`Thiếu biến môi trường ${name}`);
+  if (!v) throw new ConfigError(`Chưa cấu hình ${name} trên máy chủ — admin cần đặt biến môi trường này.`);
   return v;
 }

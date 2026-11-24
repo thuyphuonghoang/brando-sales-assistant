@@ -17,7 +17,7 @@ npm run dev                     # cửa sổ 2: http://localhost:3000
 2. Bảng giá / quy tắc / ngành / số liệu tự được nạp ở lần đăng nhập đầu khi dữ liệu còn trống. Sau khi sửa Sheet, admin vào **Quản trị → Đồng bộ lại**.
 3. Đăng nhập thêm `sales1@brando.vn`, `sales2@brando.vn`… ở cửa sổ ẩn danh để thử cộng tác.
 
-Ở chế độ `GOOGLE_MODE=mock`: dữ liệu Sheets lấy từ `src/server/fixtures/sheets.ts`, Places/Gemini trả dữ liệu giả lập, "PDF" chỉ được ghi vào `_mock/drive/files` (xem tại `/mock-drive/...`).
+Ở chế độ `GOOGLE_MODE=mock` (chỉ khi phát triển/test — bản build production luôn chạy live trừ khi đặt `ALLOW_MOCK_DATA=true`): dữ liệu Sheets lấy từ `src/server/fixtures/sheets.ts`, Places/Gemini trả dữ liệu giả lập, "PDF" chỉ được ghi vào `_mock/drive/files` (xem tại `/mock-drive/...`).
 
 ## Kiểm thử
 
@@ -52,6 +52,11 @@ Chạy một test: `npx vitest run tests/unit -t "tính tiền"` hoặc `npm run
 | Quy tắc (`RULES_SHEET_ID`, tab đầu) | `industry, problem_code, service_codes` — `industry` = `*` cho mọi ngành; `service_codes` phân cách bằng dấu phẩy |
 | Ngành (`INDUSTRY_SHEET_ID`, **mỗi tab một ngành**, tên tab = tên ngành) | `item_code, label, how_to_check, weight` |
 | Số liệu (`STATS_SHEET_ID`, tab đầu) | `industry, stat_text, value, source_name, source_url, year` |
+| Gói chuẩn (`STANDARD_SHEET_ID`, mặc định = `PRICE_SHEET_ID`, tab **Gói**) | Bảng tóm tắt có cột `Mã gói … Gửi báo giá` và bảng chi tiết `Mã gói, Case, Mức, Mã DV, Dịch vụ, Số lượng, …, Ghi chú`. Tổng tiền tính lại từ bảng giá; "Tự gửi được" lấy từ cột Gửi báo giá |
+| Case (cùng sheet, tab **Case**) | `Mã case, Ngành tham chiếu, Điều kiện nhận diện, Nhóm dịch vụ, Mục tiêu tư vấn` |
+
+Bảng giá: đơn giá `0` nghĩa là **giá linh hoạt** (báo giá riêng). Báo giá có dòng giá linh hoạt tự chuyển "Chờ duyệt" để trưởng nhóm chốt giá.
+`RULES_SHEET_ID`, `INDUSTRY_SHEET_ID`, `STATS_SHEET_ID` chưa đặt thì lần đồng bộ bỏ qua phần đó và báo cảnh báo, các phần khác vẫn chạy.
 
 ## Giới hạn đã biết
 

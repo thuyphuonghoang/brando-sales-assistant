@@ -52,6 +52,11 @@ export function formatVnd(n: number): string {
   return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + " ₫";
 }
 
+/** Đơn giá 0 = dịch vụ giá linh hoạt (báo giá riêng) → báo giá có dòng này phải chờ duyệt. */
+export function flexibleLines(lines: QuoteLine[]): QuoteLine[] {
+  return lines.filter((l) => l.unitPrice === 0);
+}
+
 export function needsApproval(discountPercent: number, threshold: number): boolean {
   return discountPercent > threshold;
 }

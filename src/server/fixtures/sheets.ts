@@ -57,3 +57,25 @@ export const statRows = [
   ["F&B", "Thực khách xem ảnh món ăn trên Google Maps trước khi đến quán", "70%", "[Nguồn mẫu – thay bằng nguồn thật]", "https://example.com/nguon-mau-2", "2025"],
   ["Nha khoa / Y tế", "Bệnh nhân tìm phòng khám qua tìm kiếm trực tuyến", "77%", "[Nguồn mẫu – thay bằng nguồn thật]", "https://example.com/nguon-mau-3", "2024"],
 ];
+
+// Bộ chuẩn (mock): tab "Case" và tab "Gói", cùng bố cục như sheet thật (bảng tóm tắt + bảng chi tiết).
+export const caseRows = [
+  ["Mã case", "Ngành tham chiếu", "Điều kiện nhận diện (theo tab Tiêu chí)", "Nhóm dịch vụ", "Mục tiêu tư vấn", "Dịch vụ chính (mã trong Bảng giá)"],
+  ["M1", "Quán ăn local", "MAP-REV < 100; chưa đăng bài", "Nhận biết", "Có thêm khách cho cơ sở", "GBP-OPT, REVIEW-MGMT"],
+];
+
+export const packageRows = [
+  ["Mức ngân sách", "Trần ngân sách (VNĐ)"],
+  ["Tiết kiệm", 7000000],
+  [],
+  ["Mã gói", "Case", "Mức", "Tổng phần giá cố định (VNĐ)", "Số hạng mục giá linh hoạt", "Trần mức (VNĐ)", "So với trần", "Gửi báo giá"],
+  ["M1-T", "M1", "Tiết kiệm", 7500000, 0, 7000000, "Vượt trần", "Tự gửi được"],
+  ["M1-C", "M1", "Cơ bản", 15500000, 0, 10000000, "Vượt trần", "Chờ anh duyệt"],
+  [],
+  ["Mã gói", "Case", "Mức", "Mã DV", "Dịch vụ", "Số lượng", "Đơn giá (VNĐ)", "Thành tiền (VNĐ)", "Ghi chú"],
+  ["M1-T", "M1", "Tiết kiệm", "GBP-OPT", "Tối ưu Google Business Profile", 1, 3500000, 3500000],
+  ["M1-T", "M1", "Tiết kiệm", "REVIEW-MGMT", "Quản trị đánh giá", 1, 4000000, 4000000],
+  ["M1-C", "M1", "Cơ bản", "GBP-OPT", "Tối ưu Google Business Profile", 1, 3500000, 3500000],
+  ["M1-C", "M1", "Cơ bản", "REVIEW-MGMT", "Quản trị đánh giá", 1, 4000000, 4000000],
+  ["M1-C", "M1", "Cơ bản", "FB-CONTENT", "Nội dung fanpage", 1, 8000000, 8000000, "1 tháng"],
+];
