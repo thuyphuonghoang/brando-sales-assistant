@@ -216,3 +216,26 @@ export function parseCriteria(rows: Row[]): Criterion[] {
     }))
     .filter((c) => c.code);
 }
+
+/**
+ * Chưa có sheet ngành riêng (INDUSTRY_SHEET_ID) → dùng danh sách ngành theo 6 case của Bộ chuẩn,
+ * checklist nhận định lấy từ tab Tiêu chí. Ngành chỉ để phân loại và tham chiếu; case vẫn chọn theo điều kiện.
+ */
+export const DEFAULT_INDUSTRY_NAMES = [
+  "F&B (nhà hàng, cafe, bar, quán ăn)",
+  "Spa, làm đẹp",
+  "Lưu trú (homestay, khách sạn)",
+  "Nha khoa, phòng khám",
+  "B2B, dịch vụ chuyên môn",
+  "Khác",
+];
+
+export function defaultIndustries(criteria: Criterion[]): Industry[] {
+  const checklist: ChecklistItem[] = criteria.map((c) => ({
+    item_code: c.code,
+    label: `${c.channel}: ${c.label}`,
+    how_to_check: [c.weak && `Yếu: ${c.weak}`, c.mid && `Trung bình: ${c.mid}`, c.strong && `Mạnh: ${c.strong}`].filter(Boolean).join(" · ") || c.note,
+    weight: 1,
+  }));
+  return DEFAULT_INDUSTRY_NAMES.map((name) => ({ id: slugify(name), name, checklist }));
+}

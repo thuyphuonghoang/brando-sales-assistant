@@ -2,7 +2,7 @@ import "server-only";
 // Đọc 4 Google Sheets nguồn và đồng bộ vào Firestore (collection "catalog").
 import { sheets as sheetsApi } from "@googleapis/sheets";
 import { FieldValue } from "firebase-admin/firestore";
-import { parseCases, parseCriteria, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
+import { defaultIndustries, parseCases, parseCriteria, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
 import type { CaseDef, Criterion, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
 import { adminDb } from "../firebase-admin";
 import * as fx from "../fixtures/sheets";
@@ -126,11 +126,16 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
 
   const { items: prices, errors: priceErrors } = parsePrices(src.prices);
   const rules: RuleRow[] = parseRules(src.rules);
-  const industries: Industry[] = Object.entries(src.industries).map(([t, rows]) => parseIndustryTab(t, rows));
   const stats: StatItem[] = parseStats(src.stats);
   const { items: packages, errors: packageErrors } = parseStandardPackages(src.packages, prices);
   const cases: CaseDef[] = parseCases(src.cases);
   const criteria: Criterion[] = parseCriteria(src.criteria);
+  let industries: Industry[] = Object.entries(src.industries).map(([t, rows]) => parseIndustryTab(t, rows));
+  if (industries.length === 0 && criteria.length > 0) {
+    industries = defaultIndustries(criteria);
+    warnings.splice(0, warnings.length, ...warnings.filter((w) => !w.includes("INDUSTRY_SHEET_ID")));
+    warnings.push("Chưa có sheet ngành riêng — dùng danh sách ngành theo case, checklist lấy từ tab Tiêu chí");
+  }
   const errors = [...warnings, ...priceErrors, ...packageErrors];
 
   const db = adminDb();

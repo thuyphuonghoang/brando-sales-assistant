@@ -99,6 +99,12 @@ test.describe("Research → Nhận định", () => {
     // Khám website tự động (mock): thẻ kết quả hiện ra với điểm mobile.
     await expect(page.getByTestId("website-audit")).toContainText("48");
 
+    // Đổi ngành ngay trên hồ sơ (đi qua server, ghi activity) rồi đổi lại.
+    await page.getByTestId("client-industry").selectOption("Giáo dục");
+    await expect.poll(async () => (await db.collection("clients").doc(id).get()).get("industry")).toBe("Giáo dục");
+    await page.getByTestId("client-industry").selectOption("F&B");
+    await expect.poll(async () => (await db.collection("clients").doc(id).get()).get("industry")).toBe("F&B");
+
     // Chấm theo Bộ chuẩn: MAP-REV tự đo (mock 12 review → Yếu), sales chọn khu vực → case gợi ý M1.
     await expect(page.getByTestId("level-MAP-REV")).toHaveText("Yếu");
     await page.getByLabel("Chọn Khu vực kinh doanh và tệp khách local").selectOption("khu dân cư local");
