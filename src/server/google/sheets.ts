@@ -1,6 +1,6 @@
 import "server-only";
 // Đọc 4 Google Sheets nguồn và đồng bộ vào Firestore (collection "catalog").
-import { google } from "googleapis";
+import { sheets as sheetsApi } from "@googleapis/sheets";
 import { FieldValue } from "firebase-admin/firestore";
 import { parseCases, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
 import type { CaseDef, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
@@ -11,7 +11,7 @@ import { googleAuth, googleMode, requireEnv } from "./index";
 type Rows = (string | number)[][];
 
 async function readTab(spreadsheetId: string, tabTitle?: string): Promise<Rows> {
-  const sheets = google.sheets({ version: "v4", auth: googleAuth() });
+  const sheets = sheetsApi({ version: "v4", auth: googleAuth() });
   let title = tabTitle;
   if (!title) {
     const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties" });
@@ -27,13 +27,13 @@ async function readTab(spreadsheetId: string, tabTitle?: string): Promise<Rows> 
 
 async function tabTitleByGid(spreadsheetId: string, gid?: string): Promise<string | undefined> {
   if (!gid) return undefined;
-  const sheets = google.sheets({ version: "v4", auth: googleAuth() });
+  const sheets = sheetsApi({ version: "v4", auth: googleAuth() });
   const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties" });
   return meta.data.sheets?.find((s) => String(s.properties?.sheetId) === gid)?.properties?.title ?? undefined;
 }
 
 async function readAllTabs(spreadsheetId: string): Promise<Record<string, Rows>> {
-  const sheets = google.sheets({ version: "v4", auth: googleAuth() });
+  const sheets = sheetsApi({ version: "v4", auth: googleAuth() });
   const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties" });
   const titles = (meta.data.sheets ?? []).map((s) => s.properties?.title).filter(Boolean) as string[];
   const out: Record<string, Rows> = {};
