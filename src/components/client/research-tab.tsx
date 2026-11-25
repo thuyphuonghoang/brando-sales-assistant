@@ -7,6 +7,8 @@ import type { FieldLock } from "@/hooks/collab";
 import { CommentThread } from "@/components/collab-widgets";
 import { EditableField } from "@/components/editable-field";
 import { SourceBadge } from "@/components/source-badge";
+import { StandardScoreCard } from "./standard-score";
+import { WebsiteCard } from "./website-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -119,9 +121,14 @@ export function ResearchTab({ client, locks }: { client: Client; locks: Record<s
   const run = async () => {
     setBusy(true);
     try {
-      const r = await api<{ found: boolean; competitors: number }>(`/api/clients/${client.id}/research`, "POST");
-      if (r.found) toast.success(`Đã thu thập hồ sơ Google và ${r.competitors} đối thủ`);
+      const r = await api<{ found: boolean; competitors: number; website: boolean; mapsError: string | null }>(
+        `/api/clients/${client.id}/research`,
+        "POST",
+      );
+      if (r.mapsError) toast.warning(r.mapsError);
+      else if (r.found) toast.success(`Đã thu thập hồ sơ Google và ${r.competitors} đối thủ`);
       else toast.warning("Không tìm thấy doanh nghiệp trên Google Maps — kiểm tra tên hoặc link Maps");
+      if (r.website) toast.success("Đã khám website");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -136,7 +143,7 @@ export function ResearchTab({ client, locks }: { client: Client; locks: Record<s
         <CardHeader>
           <CardTitle>Kênh khai báo</CardTitle>
           <CardDescription>
-            Dữ liệu chỉ lấy qua API chính thức (Google Places). Không scrape nền tảng nào.
+            Google Maps lấy qua API chính thức (Google Places); website được mở như một trình duyệt để kiểm tra trang chủ. Không scrape mạng xã hội.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -163,6 +170,7 @@ export function ResearchTab({ client, locks }: { client: Client; locks: Record<s
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {client.mapsError && <p className="mb-2 text-sm text-amber-600">{client.mapsError}</p>}
           {client.place ? <PlaceSummary place={client.place} /> : <p className="text-sm text-muted-foreground">Không rõ — chưa thu thập.</p>}
         </CardContent>
       </Card>
@@ -213,6 +221,10 @@ export function ResearchTab({ client, locks }: { client: Client; locks: Record<s
           )}
         </CardContent>
       </Card>
+
+      {client.inputs.website && <WebsiteCard audit={client.website ?? null} />}
+
+      <StandardScoreCard client={client} />
 
       <Card>
         <CardHeader>

@@ -69,6 +69,29 @@ export interface PlaceInfo {
   primaryType?: string;
 }
 
+/** Kết quả khám website của khách (nhãn "Thu thập"). */
+export interface WebsiteAudit {
+  url: string;
+  finalUrl?: string;
+  reachable: boolean;
+  https: boolean;
+  status?: number;
+  title?: string;
+  description?: string;
+  hasViewport: boolean;
+  hasPhone: boolean;
+  hasBooking: boolean;
+  hasMenu: boolean;
+  hasPrices: boolean;
+  hasSchema: boolean;
+  social: Partial<Record<"facebook" | "instagram" | "tiktok" | "tripadvisor" | "youtube" | "zalo", string>>;
+  wordCount: number;
+  /** Điểm hiệu năng mobile của Google PageSpeed (0–100); null khi không đo được. */
+  mobileScore: number | null;
+  checkedAt: number;
+  error?: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -94,10 +117,15 @@ export interface Client {
     investment?: number | null;
     decisionMaker?: string;
     timeline?: string;
+    /** Giá trị sales nhập cho các tiêu chí Bộ chuẩn, theo mã (vd. "MAP-POST": "Yếu", "TRIP-REV": "42"). */
+    criteria?: Record<string, string>;
   };
   /** Dữ liệu thu thập từ Places API (nhãn "Thu thập"). */
   place?: PlaceInfo | null;
   competitors?: PlaceInfo[];
+  website?: WebsiteAudit | null;
+  /** Lý do không thu thập được Google Maps (vd. chưa có khoá Places). */
+  mapsError?: string | null;
   researchedAt?: number | null;
   createdAt: number;
   updatedAt: number;
@@ -112,6 +140,49 @@ export interface PriceItem {
   unit: string;
   price: number;
   effective_from: string;
+}
+
+/** Một tiêu chí trong tab "Tiêu chí" của Bộ chuẩn. Ngưỡng giữ nguyên chữ trong sheet (vd. "< 100"). */
+export interface Criterion {
+  code: string;
+  channel: string;
+  label: string;
+  how: string;
+  weak: string;
+  mid: string;
+  strong: string;
+  note: string;
+}
+
+export type CriterionLevel = "Yếu" | "Trung bình" | "Mạnh" | "Không rõ";
+
+export interface CriterionResult {
+  code: string;
+  channel: string;
+  label: string;
+  level: CriterionLevel;
+  /** Giá trị đo được hoặc sales nhập, dạng chữ để hiển thị. */
+  value?: string;
+  evidence: string;
+  source: "Thu thập" | "Sales nhập" | "Chưa có dữ liệu";
+}
+
+export interface CaseMatch {
+  code: string;
+  name: string;
+  matched: string[];
+  failed: string[];
+  unchecked: string[];
+  /** Tỷ lệ điều kiện khớp trên số điều kiện kiểm được (0–1). */
+  ratio: number;
+}
+
+export interface CaseSuggestion {
+  /** Case được chọn tự động; null khi chưa đủ dữ liệu hoặc hoà → sales/trưởng nhóm chọn. */
+  pick: string | null;
+  needsReview: boolean;
+  reason: string;
+  candidates: CaseMatch[];
 }
 
 /** Một "case" khách hàng trong Bộ chuẩn (tab Case): A1…A6. */

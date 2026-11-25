@@ -53,7 +53,10 @@ Chạy một test: `npx vitest run tests/unit -t "tính tiền"` hoặc `npm run
 | Ngành (`INDUSTRY_SHEET_ID`, **mỗi tab một ngành**, tên tab = tên ngành) | `item_code, label, how_to_check, weight` |
 | Số liệu (`STATS_SHEET_ID`, tab đầu) | `industry, stat_text, value, source_name, source_url, year` |
 | Gói chuẩn (`STANDARD_SHEET_ID`, mặc định = `PRICE_SHEET_ID`, tab **Gói**) | Bảng tóm tắt có cột `Mã gói … Gửi báo giá` và bảng chi tiết `Mã gói, Case, Mức, Mã DV, Dịch vụ, Số lượng, …, Ghi chú`. Tổng tiền tính lại từ bảng giá; "Tự gửi được" lấy từ cột Gửi báo giá |
+| Tiêu chí (cùng sheet, tab **Tiêu chí**) | `Mã, Kênh, Chỉ số, Cách lấy dữ liệu tự động, Yếu, Trung bình, Mạnh, Ghi chú`. Ngưỡng viết dạng `< 100`, `100 - 500`, `> 1.000`, `Top 10` (nhiều khoảng cách nhau bằng `;`). Ghi chú `Phân loại: a, b, c` tạo danh sách chọn |
 | Case (cùng sheet, tab **Case**) | `Mã case, Ngành tham chiếu, Điều kiện nhận diện, Nhóm dịch vụ, Mục tiêu tư vấn` |
+
+Case gợi ý: đọc cột Điều kiện nhận diện (`MÃ = chữ`, `MÃ < N`, `MÃ a - b`, `điểm sao a - b`, `điểm sao khoảng x`, `Như A2, …`); phần không đọc được hiện ra để sales tự kiểm. Chỉ tự chọn khi khớp ≥ 75% điều kiện kiểm được (tối thiểu 2) và không hoà.
 
 Bảng giá: đơn giá `0` nghĩa là **giá linh hoạt** (báo giá riêng). Báo giá có dòng giá linh hoạt tự chuyển "Chờ duyệt" để trưởng nhóm chốt giá.
 `RULES_SHEET_ID`, `INDUSTRY_SHEET_ID`, `STATS_SHEET_ID` chưa đặt thì lần đồng bộ bỏ qua phần đó và báo cảnh báo, các phần khác vẫn chạy.

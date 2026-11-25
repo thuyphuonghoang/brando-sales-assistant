@@ -61,7 +61,8 @@ export const statRows = [
 // Bộ chuẩn (mock): tab "Case" và tab "Gói", cùng bố cục như sheet thật (bảng tóm tắt + bảng chi tiết).
 export const caseRows = [
   ["Mã case", "Ngành tham chiếu", "Điều kiện nhận diện (theo tab Tiêu chí)", "Nhóm dịch vụ", "Mục tiêu tư vấn", "Dịch vụ chính (mã trong Bảng giá)"],
-  ["M1", "Quán ăn local", "MAP-REV < 100; chưa đăng bài", "Nhận biết", "Có thêm khách cho cơ sở", "GBP-OPT, REVIEW-MGMT"],
+  ["M1", "Quán ăn local", "AREA = khu dân cư local; MAP-REV < 100; điểm sao 3.7 - 4.5; MAP-POST = chưa đăng", "Nhận biết", "Có thêm khách cho cơ sở", "GBP-OPT, REVIEW-MGMT"],
+  ["M2", "Nhà hàng thành phố du lịch", "AREA = thành phố du lịch; MAP-REV 100 - 500; MAP-BOOK = chưa có", "Chuyển đổi", "Thu hút khách du lịch", "GBP-OPT, ADS-GG"],
 ];
 
 export const packageRows = [
@@ -78,4 +79,15 @@ export const packageRows = [
   ["M1-C", "M1", "Cơ bản", "GBP-OPT", "Tối ưu Google Business Profile", 1, 3500000, 3500000],
   ["M1-C", "M1", "Cơ bản", "REVIEW-MGMT", "Quản trị đánh giá", 1, 4000000, 4000000],
   ["M1-C", "M1", "Cơ bản", "FB-CONTENT", "Nội dung fanpage", 1, 8000000, 8000000, "1 tháng"],
+];
+
+// Bộ chuẩn (mock): tab "Tiêu chí" — một phần các tiêu chí thật, đủ để thử chấm điểm và nhận diện case.
+export const criteriaRows = [
+  ["Mã", "Kênh", "Chỉ số", "Cách lấy dữ liệu tự động", "Yếu", "Trung bình", "Mạnh", "Ghi chú", "Nguồn"],
+  ["MAP-REV", "Google Maps", "Số review", "Google Places API", "< 100", "100 - 500 (trung bình); 500 - 1.000 (trung bình cao)", "> 1.000", "", ""],
+  ["MAP-POST", "Google Maps", "Bài viết chủ sở hữu", "Dịch vụ lấy bài đăng Map", "< 1 bài/tháng", "Khoảng 1 bài/3 tuần (ổn)", "Đăng hàng ngày", "", ""],
+  ["MAP-NAME", "Google Maps", "Tên Map vi phạm chính sách", "Places API + kiểm tra tự động", "Viết hoa toàn bộ hoặc nhồi từ khóa", "", "Không vi phạm", "", ""],
+  ["MAP-BOOK", "Google Maps", "Nút đặt bàn / đặt lịch / đặt phòng", "Places API", "Chưa có", "", "Có", "", ""],
+  ["TRIP-REV", "Tripadvisor", "Số review", "Tripadvisor Content API", "< 30", "30 - 50 (ổn)", "> 100", "Khoảng 51 - 100 chưa được xếp mức", ""],
+  ["AREA", "Khu vực", "Khu vực kinh doanh và tệp khách local", "Địa chỉ trên Map + kiểm tra Facebook", "", "", "", "Phân loại: khu phố Tây, thành phố du lịch, khu dân cư local", ""],
 ];

@@ -75,6 +75,7 @@ function buildPrompt({ client, industry, stats, problemCodes }: AssessInput): st
   const data = {
     doanh_nghiep: { ten: client.name, nganh: client.industry, kenh_khai_bao: client.inputs },
     du_lieu_thu_thap_google: client.place ?? "Không rõ",
+    kham_website: client.website ?? "Không rõ",
     doi_thu_thu_thap: client.competitors ?? [],
     sales_nhap: client.business,
     ghi_chu_noi_bo: client.sections,

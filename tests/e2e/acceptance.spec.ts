@@ -91,10 +91,24 @@ test.describe("Research → Nhận định", () => {
   test("3. Research 1 doanh nghiệp → có bảng chấm điểm theo ngành + 3 đối thủ", async ({ page }) => {
     await login(page, "sales1@brando.vn", "Sales Một");
     id = await createClient(page, unique("Quán Phở Mẫu"));
+    await db.collection("clients").doc(id).update({ "inputs.website": "quanphomau.vn" });
     await page.goto(`/clients/${id}`);
     await page.getByTestId("run-research").click();
     await expect(page.getByTestId("competitor-row").first()).toBeVisible({ timeout: 20_000 });
     expect(await page.getByTestId("competitor-row").count()).toBeGreaterThanOrEqual(3);
+    // Khám website tự động (mock): thẻ kết quả hiện ra với điểm mobile.
+    await expect(page.getByTestId("website-audit")).toContainText("48");
+
+    // Đổi ngành ngay trên hồ sơ (đi qua server, ghi activity) rồi đổi lại.
+    await page.getByTestId("client-industry").selectOption("Giáo dục");
+    await expect.poll(async () => (await db.collection("clients").doc(id).get()).get("industry")).toBe("Giáo dục");
+    await page.getByTestId("client-industry").selectOption("F&B");
+    await expect.poll(async () => (await db.collection("clients").doc(id).get()).get("industry")).toBe("F&B");
+
+    // Chấm theo Bộ chuẩn: MAP-REV tự đo (mock 12 review → Yếu), sales chọn khu vực → case gợi ý M1.
+    await expect(page.getByTestId("level-MAP-REV")).toHaveText("Yếu");
+    await page.getByLabel("Chọn Khu vực kinh doanh và tệp khách local").selectOption("khu dân cư local");
+    await expect(page.getByTestId("case-suggestion")).toContainText("M1");
 
     await page.getByRole("tab", { name: "Nhận định" }).click();
     await page.getByTestId("run-assessment").click();
