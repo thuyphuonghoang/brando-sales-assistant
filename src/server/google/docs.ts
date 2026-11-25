@@ -10,7 +10,8 @@ import "server-only";
 // Bảng hạng mục: một bảng có MỘT hàng chứa {{item_name}} {{item_desc}} {{item_qty}}
 //   {{item_unit_price}} {{item_amount}} — hàng này được nhân bản theo số hạng mục.
 import { Readable } from "node:stream";
-import { google, type docs_v1 } from "googleapis";
+import { docs as docsApi, type docs_v1 } from "@googleapis/docs";
+import { drive as driveApi } from "@googleapis/drive";
 import { formatVnd } from "@/lib/pricing";
 import type { Quote } from "@/lib/types";
 import { adminDb } from "../firebase-admin";
@@ -96,8 +97,8 @@ export async function generateQuoteFiles(q: Quote, existingFolderId?: string | n
   }
 
   const auth = googleAuth();
-  const drive = google.drive({ version: "v3", auth });
-  const docs = google.docs({ version: "v1", auth });
+  const drive = driveApi({ version: "v3", auth });
+  const docs = docsApi({ version: "v1", auth });
   const root = requireEnv("ROOT_FOLDER_ID");
   const common = { supportsAllDrives: true } as const;
 
