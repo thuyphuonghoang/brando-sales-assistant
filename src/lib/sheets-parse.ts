@@ -239,3 +239,40 @@ export function defaultIndustries(criteria: Criterion[]): Industry[] {
   }));
   return DEFAULT_INDUSTRY_NAMES.map((name) => ({ id: slugify(name), name, checklist }));
 }
+
+/**
+ * Chưa có sheet quy tắc (RULES_SHEET_ID) và Bộ chuẩn chưa có tab "Vấn đề - Dịch vụ" → mỗi tiêu chí là một
+ * vấn đề (problem_code = mã tiêu chí), gợi ý dịch vụ Team Agency theo kênh. Chỉ giữ mã dịch vụ có trong Bảng giá.
+ * AREA (phân loại khu vực) và WEB-* (Team Agency chưa bán dịch vụ website, quy tắc 6) không thành vấn đề.
+ */
+export const DEFAULT_PROBLEM_SERVICES: Record<string, string[]> = {
+  "MAP-REV": ["MAP-CARE-BASIC", "MAP-CARE-PRO", "MAP-LG6", "MAP-LG6-PHOTO"],
+  "MAP-REPLY": ["MAP-CARE-BASIC", "MAP-CARE-PRO"],
+  "MAP-POST": ["MAP-CARE-BASIC", "MAP-CARE-PRO"],
+  "MAP-NAME": ["MAP-OPT", "MAP-VERIFY-OPT"],
+  "MAP-LANG": ["MAP-CARE-INTL-BASIC", "MAP-CARE-INTL-PRO", "KOC-INTL"],
+  "MAP-LOW": ["MAP-SPAM", "MAP-LG6", "MAP-CARE-PRO"],
+  "MAP-VERIFIED": ["MAP-VERIFY", "MAP-CREATE", "MAP-VERIFY-OPT"],
+  "MAP-PHOTO": ["MAP-OPT", "MAP-CARE-PRO"],
+  "MAP-MENU": ["MAP-OPT"],
+  "MAP-BOOK": ["MAP-BOOKING", "MAP-HOTEL-BTN"],
+  "TRIP-VERIFIED": ["TRIP-SETUP"],
+  "TRIP-RANK": ["TRIP-CARE", "TRIP-REVIEW"],
+  "TRIP-REV": ["TRIP-REVIEW"],
+  "TRIP-PHOTO": ["TRIP-CARE"],
+  "TRIP-CARE": ["TRIP-CARE"],
+  "FB-FREQ": ["FB-CARE"],
+  "FB-ADS": ["ADS-FB"],
+  "IG-FREQ": ["FB-CARE"],
+  "IG-ADS": ["ADS-IG"],
+};
+
+export function defaultRules(criteria: Criterion[], priceCodes: Set<string>): RuleRow[] {
+  return criteria
+    .filter((c) => DEFAULT_PROBLEM_SERVICES[c.code])
+    .map((c) => ({
+      industry: "*",
+      problem_code: c.code,
+      service_codes: DEFAULT_PROBLEM_SERVICES[c.code].filter((s) => priceCodes.has(s)),
+    }));
+}

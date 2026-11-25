@@ -60,6 +60,7 @@ Case gợi ý: đọc cột Điều kiện nhận diện (`MÃ = chữ`, `MÃ < 
 
 Bảng giá: đơn giá `0` nghĩa là **giá linh hoạt** (báo giá riêng). Báo giá có dòng giá linh hoạt tự chuyển "Chờ duyệt" để trưởng nhóm chốt giá.
 `RULES_SHEET_ID`, `INDUSTRY_SHEET_ID`, `STATS_SHEET_ID` chưa đặt thì lần đồng bộ bỏ qua phần đó và báo cảnh báo, các phần khác vẫn chạy.
+Riêng quy tắc: chưa có `RULES_SHEET_ID` thì đọc tab "Vấn đề - Dịch vụ" trong Bộ chuẩn (cùng cột `industry, problem_code, service_codes`); không có tab đó thì mỗi tiêu chí trong tab Tiêu chí thành một vấn đề, dịch vụ gợi ý theo kênh (`DEFAULT_PROBLEM_SERVICES` trong `src/lib/sheets-parse.ts`). Chưa có sheet ngành thì dùng 6 ngành theo case, checklist lấy từ tab Tiêu chí.
 
 ## Giới hạn đã biết
 
