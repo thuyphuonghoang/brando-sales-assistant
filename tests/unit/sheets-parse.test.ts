@@ -18,3 +18,17 @@ describe("ngành mặc định khi chưa có sheet ngành", () => {
     ]);
   });
 });
+
+describe("quy tắc mặc định khi chưa có sheet quy tắc", () => {
+  it("mỗi tiêu chí có dịch vụ thành một problem_code, chỉ giữ mã có trong bảng giá", async () => {
+    const { defaultRules, parseCriteria } = await import("@/lib/sheets-parse");
+    const criteria = parseCriteria([
+      ["Mã", "Kênh", "Chỉ số", "Cách lấy dữ liệu tự động", "Yếu", "Trung bình", "Mạnh", "Ghi chú"],
+      ["MAP-REV", "Google Maps", "Số review", "", "< 100", "", "> 1.000", ""],
+      ["AREA", "Khu vực", "Khu vực", "", "", "", "", ""],
+      ["WEB-SSL", "Website", "HTTPS", "", "Chưa có", "", "Có", ""],
+    ]);
+    const rules = defaultRules(criteria, new Set(["MAP-CARE-PRO", "MAP-LG6"]));
+    expect(rules).toEqual([{ industry: "*", problem_code: "MAP-REV", service_codes: ["MAP-CARE-PRO", "MAP-LG6"] }]);
+  });
+});

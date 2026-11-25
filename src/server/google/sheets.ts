@@ -2,7 +2,7 @@ import "server-only";
 // Đọc 4 Google Sheets nguồn và đồng bộ vào Firestore (collection "catalog").
 import { sheets as sheetsApi } from "@googleapis/sheets";
 import { FieldValue } from "firebase-admin/firestore";
-import { defaultIndustries, parseCases, parseCriteria, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
+import { defaultIndustries, defaultRules, parseCases, parseCriteria, parseIndustryTab, parsePrices, parseRules, parseStandardPackages, parseStats } from "@/lib/sheets-parse";
 import type { CaseDef, Criterion, Industry, PriceItem, RuleRow, StandardPackage, StatItem } from "@/lib/types";
 import { adminDb } from "../firebase-admin";
 import * as fx from "../fixtures/sheets";
@@ -114,7 +114,9 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
     const standardId = process.env.STANDARD_SHEET_ID || priceId;
     const [prices, rules, industries, stats, packages, cases, criteria] = await Promise.all([
       tabTitleByGid(priceId, process.env.PRICE_SHEET_GID).then((t) => readTab(priceId, t)),
-      optional("RULES_SHEET_ID", [] as Rows, warnings, (id) => readTab(id)),
+      process.env.RULES_SHEET_ID
+        ? readTab(process.env.RULES_SHEET_ID)
+        : readNamedTab(standardId, "Vấn đề - Dịch vụ", []), // tab tuỳ chọn trong Bộ chuẩn; thiếu thì dùng mặc định
       optional("INDUSTRY_SHEET_ID", {} as Record<string, Rows>, warnings, (id) => readAllTabs(id)),
       optional("STATS_SHEET_ID", [] as Rows, warnings, (id) => readTab(id)),
       readNamedTab(standardId, "Gói", warnings),
@@ -125,11 +127,15 @@ export async function syncSheetsToFirestore(byUid: string): Promise<SyncResult> 
   }
 
   const { items: prices, errors: priceErrors } = parsePrices(src.prices);
-  const rules: RuleRow[] = parseRules(src.rules);
   const stats: StatItem[] = parseStats(src.stats);
   const { items: packages, errors: packageErrors } = parseStandardPackages(src.packages, prices);
   const cases: CaseDef[] = parseCases(src.cases);
   const criteria: Criterion[] = parseCriteria(src.criteria);
+  let rules: RuleRow[] = parseRules(src.rules);
+  if (rules.length === 0 && criteria.length > 0) {
+    rules = defaultRules(criteria, new Set(prices.map((p) => p.code)));
+    warnings.push("Chưa có sheet quy tắc — vấn đề lấy theo tab Tiêu chí, dịch vụ gợi ý theo kênh");
+  }
   let industries: Industry[] = Object.entries(src.industries).map(([t, rows]) => parseIndustryTab(t, rows));
   if (industries.length === 0 && criteria.length > 0) {
     industries = defaultIndustries(criteria);
